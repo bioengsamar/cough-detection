@@ -7,12 +7,12 @@ import tensorflow.compat.v1 as tff
 
 tff.reset_default_graph()
 n_steps = 1
-n_inputs = 320
+n_inputs = 110250
 n_neurons = 150
 n_outputs = 2
 learning_rate = 0.001
-X = tff.placeholder(tf.float32, [None, n_steps, n_inputs])
-y = tff.placeholder(tf.int32, [None])
+X = tff.placeholder(tf.float32, [32, n_steps, n_inputs])
+y = tff.placeholder(tf.int32, shape=(320,2))
 basic_cell = tf.compat.v1.nn.rnn_cell.BasicRNNCell(num_units=n_neurons)
 outputs, states = tff.nn.dynamic_rnn(basic_cell, X, dtype=tf.float32)
 logits = tf.compat.v1.layers.dense(states, n_outputs, activation=None)
@@ -35,7 +35,9 @@ labels = pickle.load(pickle_in)
 data= np.array(data).astype(np.float32)
 labels= np.array(labels).astype(np.int32)
 data = data.reshape(data.shape[0],-1, data.shape[1])
+print(labels.shape)
 (x_train, x_test, y_train, y_test) = train_test_split(data, labels,test_size=0.20, stratify=labels, random_state=42)
+#x_test = x_test.reshape((-1, n_steps, n_inputs))
 
 
 def shuffle_batch(X, y, batch_size):
@@ -52,7 +54,7 @@ with tff.Session() as sess:
     init.run()
     for epoch in range(n_epochs):
         for X_batch, y_batch in shuffle_batch(x_train, y_train, batch_size):
-            X_batch = X_batch.reshape((-1, n_steps, n_inputs))
+            X_batch = X_batch.reshape((batch_size, n_steps, n_inputs))
             sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
         acc_batch = accuracy.eval(feed_dict={X: X_batch, y: y_batch})
         acc_test = accuracy.eval(feed_dict={X: x_test, y: y_test})
